@@ -4,7 +4,7 @@
 // @description    Nicovideo mylist for local
 // @include        http://www.nicovideo.jp/watch/*
 // @include        http://www.nicovideo.jp/my/mylist*
-// @version        1.0.0.20110605
+// @version        1.0.1.20110605
 // @author         castor <castor.4bit@gmail.com>
 // ==/UserScript==
 (function() {
@@ -336,8 +336,8 @@
         return func.apply(self, arguments);
       }, false);
     },
-    commands: function(class, type, func, options) {
-      var elems = document.getElementsByClassName(class);
+    commands: function(className, type, func, options) {
+      var elems = document.getElementsByClassName(className);
       for (var i=0; i<elems.length; ++i) {
         this.command(elems[i], type, func, options);
       }
