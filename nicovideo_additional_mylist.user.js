@@ -4,7 +4,7 @@
 // @description    Nicovideo mylist for local
 // @include        http://www.nicovideo.jp/watch/*
 // @include        http://www.nicovideo.jp/my/mylist*
-// @version        1.0.1.20110605
+// @version        1.1.0.20120502
 // @author         castor <castor.4bit@gmail.com>
 // ==/UserScript==
 (function() {
@@ -411,12 +411,12 @@
   }
   MyView.prototype.initList = function() {
     // init
-    document.title = "拡張マイリスト - ニコニコ動画(原宿)";
+    document.title = "拡張マイリスト - "+ this.SITE_NAME;
     document.location.hash = this.TRIGGER_HASH;
 
-    var dda = $xa('//dd[contains(@class, "active")]');
-    for (var i in dda) {
-      var el = dda[i];
+    var items = $xa('//'+ this.ITEM_NODE +'[contains(@class, "active")]');
+    for (var i in items) {
+      var el = items[i];
       el.className = el.className.replace("-active", "");
       el.className = el.className.replace( "active", "");
     }
@@ -465,6 +465,14 @@
       $('SYS_page_items').appendChild($node(html));
       this.commands('SYS_btn_edit_memo', 'click', this.beginEdit);
       this.commands('SYS_btn_remove_item', 'click', this.removeItem);
+      if (this.isZero) {
+        this.commands('SYS_box_item', 'mouseover', function(){ $x('div//dl', this.elem).style.display = 'block'; });
+        this.commands('SYS_box_item', 'mouseout',  function(){ $x('div//dl', this.elem).style.display = 'none';  });
+        this.commands('SYS_btn_edit_list', 'click', function(){
+          var target = this.elem.parentNode.nextSibling;
+          target.style.display = (target.style.display == 'block')? 'none' : 'block';
+        });
+      }
 
       // tags
       for (var i in items) {
@@ -810,19 +818,21 @@
     }
     reader.readAsText(file, 'utf-8');
   }
+  MyView.prototype.SITE_NAME = 'ニコニコ動画(原宿)';
+  MyView.prototype.ITEM_NODE = 'dd';
   MyView.prototype.MENU_LINK = '<dd id="myNaviExtMylist" class="folder1-locked"><a href="javascript:void(0);">拡張マイリスト</a></dd>';
-  MyView.prototype.LIST_BASE = ''
+  MyView.prototype.LIST_BASE = '<div class="articleBody">'
     // header
-    + '<div class="mylistFormWrap">'
+    + '<div class="mylistFormWrap outer listOption">'
     + '<div class="spBox">'
     + '<form class="sortForm SYS_box_sort" action="">'
     + '<div style="float:left">'
-    + '<span class="itemNum">全<span id="mylist_items_length" style="margin-right:0">{count}</span>件</span>'
+    + '<span class="itemNum itemTotalNum">全<span id="mylist_items_length">{count}</span>件</span>'
     + '<select name="sort" id="mylist_select_sort" class="mylist_select_sort">'
     + '<option value="1" selected="true">登録が新しい順</option>'
     + '<option value="2">登録が古い順</option>'
     + '</select>'
-    + '&nbsp;タグで絞り込み:<select style="width: 120px;" id="mylist_select_tag" class="mylist_select_tag"></select>'
+    + '&nbsp;タグで絞り込み:<select id="mylist_select_tag" class="mylist_select_tag"></select>'
     + '&nbsp;'
     + '<img id="popupExtMylistButton" src="{button}" alt="エクスポート/インポート" title="エクスポート/インポート">'
     + '</div>'
@@ -855,9 +865,23 @@
     + '}\n'
     + '#popupExtMylistButton {'
     +   'cursor:pointer;'
-    + '}'
+    + '}\n'
+    + '#mylist_items_length {'
+    +   'margin-right:0;'
+    + '}\n'
+    + '#mylist_select_tag {'
+    +   'width:120px;'
+    + '}\n'
+    + '#mylist .articleBody .outer.listOption .spBox p,'
+    + '#mylist .articleBody .outer.listOption .spBox select,'
+    + '#mylist .articleBody .outer.listOption .spBox input,'
+    + '#mylist .articleBody .outer.listOption .spBox span {'
+    +   'float:none;'
+    + '}\n'
+    + 'input, textarea, select, option, label {'
+    +   'vertical-align:baseline;'
+    + '}\n'
     + '</style>'
-    + '</div>'
     // main
     + '<div id="noListMsg" class="noListMsg" style="display:none">'
     +   '<p class="att">拡張マイリストに動画は登録されていません。<br>好きな動画を登録しましょう！</p>'
@@ -865,6 +889,7 @@
     + '<ul id="SYS_page_items" class="myContList videoList"></ul>'
     // footer
     + '<div class="pagerWrap"><div class="pager"></div></div>'
+    + '</div>'
     ;
   MyView.prototype.LIST_ITEM = ''
     + '<li class="SYS_box_item">'
@@ -1004,6 +1029,42 @@
     }, 3000);
   }
   WatchView.prototype.ADD_BUTTON = '<div style="position:absolute;left:-91px"><a id="gm_add_mylist" href="javascript:void(0);"><img src="{data}" alt="拡張マイリストに登録"></a></div>';
+
+  // Mypage (Zero)
+  var MyZeroView = $extend(MyView, function(){
+    this.isZero = true;
+  });
+  MyZeroView.prototype.MENU_LINK = '<li id="myNaviExtMylist" class="folder1-locked"><a href="javascript:void(0);"><small>└</small><span>拡張マイリスト</span></a></li>';
+  MyZeroView.prototype.SITE_NAME = 'niconico';
+  MyZeroView.prototype.ITEM_NODE = 'li';
+  MyZeroView.prototype.LIST_ITEM = ''
+    + '<li class="SYS_box_item" id="SYS_box_item_{id}">'
+    + '<div class="thumbContainer">'
+    +   '<a href="watch/{vid}"><img src="{thumb_url}"></a>'
+    + '</div>'
+    + '<div class="mylistVideo">'
+    +   '<h5><a href="/watch/{vid}">{title}</a></h5>'
+    +   '<ul class="metadata" id="am_tags_{id}">'
+    +     '<li class="play">登録タグ:</li>'
+    +   '</ul>'
+    +   '<p class="date">{date} 登録</p>'
+    +   '<div class="commentContainer SYS_box_memo" id="SYS_box_memo_{id}">'
+    +     '<div><p><span class="SYS_box_memo_body">{comment}</span><a href="javascript:void(0);" class="inputTriger SYS_btn_edit_memo" id="SYS_btn_edit_memo_{id}"></a></p></div>'
+    +   '</div>'
+    + '<div id="commentEditForm_{id}"></div>'
+    + '<dl class="pullout" style="display: none; " data-nico-hided="true">'
+    +   '<dt><a class="SYS_btn_edit_list" href="javascript:;">編集<span></span></a></dt>'
+    +   '<dd style="display: none; ">'
+    +     '<ul>'
+    +       '<li><a href="http://uad.nicovideo.jp/ads/?vid={vid}" class="editBtnAd">宣伝する</a></li>'
+    +       '<li><a href="javascript:void(0);" class="editBtnDel SYS_btn_remove_item" id="SYS_btn_remove_item_{id}">削除</a></li>'
+    +     '</ul>'
+    +   '</dd>'
+    + '</dl>'
+    + '</div>'
+    ;
+  MyZeroView.prototype.LIST_ITEM_TAG_HEADER = '<li class="play">登録タグ:</li>';
+  MyZeroView.prototype.LIST_ITEM_TAG = '<li><a href="javascript:void(0);" id="am_item_tag_{id}_{tag_id}" class="am_item_tag">{name}</a></li>';
 
 
   // --------------------------------------------
@@ -1336,11 +1397,12 @@
   // --------------------------------------------
   var view;
   var mylist = new MyList();
+  var isZero = $x('//link[contains(@href, "zero_common.css")]')? true : false;
 
   if (location.href.indexOf('.nicovideo.jp/watch') !=  - 1) {
     view = new WatchView();
   } else {
-    view = new MyView();
+    view = isZero? new MyZeroView() : new MyView();
   }
   view.initialize();
 
